@@ -1,0 +1,104 @@
+  In addition to the functions described above, we have also created a couple of extra helper fnctions. These functions keep the code 
+  a bit more flexible and create less redundant code (Note, it probably could still be further optimized, but as Knuth said, premature optimzation is the root of all evil).
+
+  The first two you will encounter are the functions getClaimValue and getClaimCount. I will explain how getClaimValue works. 
+  
+   1 public string getClaimValue(Func<Claim, bool> filter)
+   2     {
+   3         var userClaims = ((ClaimsIdentity)User.Identity).Claims;
+   4         //This filter is used to get the username, can be used to get any claim
+   5         return userClaims.FirstOrDefault(filter).Value ;
+   6    }
+  
+  This function accepts a filtring function as parameter (line 1), and then extract the
+  user claims from the current context of the application (line 3)m this is an array which allows as to filter claims as we wish. We use the funtion provided by the 
+  developer to filter the claim we want.
+
+  The getClaimCount function is very similar to the getClaimValue, it just retuns the number of claims matching a filter rather than the value of a claim.
+
+  If you have difficulty understanding the Function paramater, I suggest to read this page <https://docs.microsoft.com/en-us/dotnet/api/system.func-2?view=netframework-4.8>, but in short this function 
+  accepts a claim as input and returns true or false based on the code that is within the Func body. We create this Func code in another function (creativly) called
+  createFunctions. This helper returns a Func that I described above.
+  
+   1 public Func<Claim, bool> createFunction(Claim webappClaim, bool filterOnValue)
+   2    {
+   3        //Filter either on type only (to get his name for example) or on type and value (check if he's in a certain group for example)
+   4         if (filterOnValue) {
+   5              return cl => (cl.Type == webappClaim.Type && cl.Value == webappClaim.Value);
+   6         }
+   7         else
+   8         {
+   9             return cl => (cl.Type == webappClaim.Type);
+   10         }      
+   11     }
+
+   This little helper basically creates our Func-objects for us. It checks what needs to be in the filter (the if-else on lines 4 and 7) and then creates it. In our case we are either interested to see 
+   wether a specific claim is present and the value of that claim matches a specific value (line 5, e.g. is the user im the Global Admin group) or we just want to check/get a certain claim (line 9 e.g. his department).
+   The way this functions are created is using something that is called lambda expressions <https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/lambda-expressions>, a lambda expression essentially says given an input what do I return as output, which in our specifc case results in given a claim ("cl" in code) then return ("=>") the expression that returns a boolean.
+
+   I have also created two helper functions to set some values that I need on every page based on wether the user is authorized to see the page or not. The function 
+   setDefaultValuesUnAuthorized basically assumes that the user by default has no access, this function gets called in every function as the default case. If the user does have 
+   the proper authorizations, then we set other values such as the user name and we fetch the keys in the vault. If you take a closer look
+   at the code, you will that here we use the helpers above to for example get the user UPN (create Func-filter and then get claim, see line 8 below.).
+
+   The observant reader might also notice that on line 6 and 7 we actually fetch all the names of the hosts and pass it to the View, this allowed us to check wether the input of the user is a valid 
+   hostname before allowing him to push the search button. You could argue that we are leaking some information here, and that is absolutely true, this is a choice we made as we believe that the user is authorized to see the entire hosts in this specic keyvault.
+   If you wanted to prevent this from happening, then you could just remove those lines and code and the population in the View, you would then check the input of the user on the server side. You could start messing with Ajax calls to check this dynamicall, but this would make it a bit over-engineered in our opinion   
+
+        1 public void setDefaultValuesUnAuthorized()
+        2 {
+        3    //By default: no access.
+        4    ViewData["keyvault"] = "";
+        5    ViewData["hasaccess"] = false;
+        6 }
+
+        1 private void setDefaultValuesAuthorized(Dictionary<string,string> valuePairs)
+        2 {
+        3    //Fetch user info, setup some values and pass any other key-values to the front end
+        4    ViewData["keyvault"] = keyvault;
+        5    ViewData["hasaccess"] = true;
+        6    OnGetListAsync(keyvault).Wait();
+        7    ViewData["secrets"] = secrets;
+        8    var upnValue = getClaimValue(createFunction(upnClaim, false));
+        9    //Fetch the tenant here (or anythin else based on upnclaim)
+        10    ViewData["tenantname"] = upnValue.Substring(upnValue.LastIndexOf("@")+1);
+        11    foreach (var item in valuePairs)
+        12    {
+        13        ViewData[item.Key] = item.Value;
+        14    }
+        }
+
+    One more thing that might need extra explanation is lines 11-14. You might have noticed that the function setDefaultValuesAuthorized accepts a dictionary of strings called valuePairs (it might have been properly called additionalValuesForUI).
+    This is just how I can allow other functions calling this functions to pass items to the Views. It allows them to create their own keys and values to pass through to the Views which they can then use in the Views to do whatever they want to, for example the search function uses this dictionary to actually pass the searched 
+    values to the view, while the index which has nothing to add passes an empty dictionary. You could make this paramater having a default value so you do not have to pass an empty dictionary, this is called an optional argument <https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/named-and-optional-arguments>.
+    The last two useful function you will encounter are our Controller functions Index and Search. If you read the code carefully, you will see that there is nothing out of the ordinary, we check whether a specific claim is present and based on this we provide the user access to the search function.
+    This allows us to only make the application available to certain groups within your Azure tenant (the value of the claim (webappClaim) we check is as a property of the controller).
+    1    public IActionResult Index()
+    2    {
+    3        setDefaultValuesUnAuthorized();
+    4        //check if he is in group, if so show search bar etc.
+    5        if (getClaimCount(createFunction(webappClaim, true)) > 0)
+    6        {
+    7            setDefaultValuesAuthorized(new Dictionary<string, string>());
+    8        }
+    8        return View();
+    10    }
+    The Search function, is a bit more "complex". It starts with the parameter on line 1 below. You see that is it prepended with the Bind function. This allows us to 
+    get the input from the user and create a model object from it, this has additional benefits such as value coversion as well as catch any errors because of validations (not done here). For more infromation on binding see this page <https://docs.microsoft.com/en-us/aspnet/core/mvc/models/model-binding?view=aspnetcore-3.1>.
+    Once we check wether the user actually has access to this page based on the claim, we use the binding above to call The onGetAsync function (line 9). This function doen asynchronously goes and fetches the secret within the keyvault.
+    1    public async Task<IActionResult> Search([Bind("Hostname")] MyKeyVaultModel model)
+    2    {
+    3        ModelState.Clear();
+    4        setDefaultValuesUnAuthorized();
+    5      
+    6        if (getClaimCount(createFunction(webappClaim, true)) > 0)
+    7        {       
+    8            //Fetch list of secrets and pass the names to the front end. This is in plain text. If you want this more secure, you could check the names here instead of client side validation in JS.
+    9            OnGetAsync(model.Hostname).Wait();
+    10            var dictionary2 = new Dictionary<string, string>() {
+    11                { "Hostname", model.Hostname }, { "Message", Message }
+    12           };
+    13            setDefaultValuesAuthorized(dictionary2);
+    14        }
+    15        return View("Index");
+    16    }

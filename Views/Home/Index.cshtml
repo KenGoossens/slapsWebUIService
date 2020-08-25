@@ -1,0 +1,170 @@
+﻿@model GetModernKeyVaultAADAuth.Models.MyKeyVaultModel
+@using Microsoft.Azure.KeyVault.Models;
+@{
+    ViewData["Title"] = "Home Page";
+}
+<style>
+    .autocomplete {
+        /*the container must be positioned relative:*/
+        position: relative;
+        display: inline-block;
+    }
+
+    input {
+        border: 1px solid transparent;
+        background-color: #f1f1f1;
+        padding: 10px;
+        font-size: 16px;
+    }
+
+        input[type=text] {
+            background-color: #f1f1f1;
+            width: 100%;
+        }
+
+        input[type=submit] {
+            background-color: DodgerBlue;
+            color: #fff;
+        }
+
+    .autocomplete-items {
+        position: absolute;
+        border: 1px solid #d4d4d4;
+        border-bottom: none;
+        border-top: none;
+        z-index: 99;
+        /*position the autocomplete items to be the same width as the container:*/
+        top: 100%;
+        left: 0;
+        right: 0;
+    }
+
+        .autocomplete-items div {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #fff;
+            border-bottom: 1px solid #d4d4d4;
+        }
+
+            .autocomplete-items div:hover {
+                /*when hovering an item:*/
+                background-color: #e9e9e9;
+            }
+
+    .autocomplete-active {
+        /*when navigating through the items using the arrow keys:*/
+        background-color: DodgerBlue !important;
+        color: #ffffff;
+    }
+
+    .myButton {
+        box-shadow: inset 0px 1px 0px 0px #c7c7c7;
+        background: linear-gradient(to bottom, #b3acb3 5%, #6b6b6b 100%);
+        background-color: #b3acb3;
+        border: 1px solid #f0f0f0;
+        display: inline-block;
+        cursor: pointer;
+        color: #ffffff;
+        font-family: Trebuchet MS;
+        font-size: 13px;
+        font-weight: bold;
+        padding: 6px 12px;
+        text-decoration: none;
+    }
+
+    .txtHostname {
+        font-size: 18px;
+        line-height: 1.2;
+        color: #686868;
+        display: block;
+        width: 80%;
+        background: #e6e6e6;
+        height: 45px;
+        border-radius: 2px;
+        padding: 0 3px 0 6px;
+    }
+</style>
+
+<div bgcolor="#FFFFFF" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0">
+    <table id="Table_01" width="1229" height="768" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+            <td>
+                <img src="~/Images/Get-Modern-Key-Vault-Web-App_01.jpg" width="313" height="93" alt="">
+            </td>
+            <td colspan="3">
+                <img src="~/Images/Get-Modern-Key-Vault-Web-App_02.jpg" width="916" height="93" alt="">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4">
+                <img src="~/Images/Get-Modern-Key-Vault-Web-App_03.jpg" width="1229" height="92" alt="">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <img src="~/Images/Get-Modern-Key-Vault-Web-App_04.jpg" width="313" height="421" alt="">
+            </td>
+            <td>
+                <img src="~/Images/Get-Modern-Key-Vault-Web-App_05.jpg" width="37" height="421" alt="">
+            </td>
+            <td style="background-image:url(../Images/Get-Modern-Key-Vault-Web-App_06.jpg)" width="422" height="421">
+                @if ((bool)ViewData["hasaccess"])
+                {
+                    <form asp-action="Search">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <div class="form-group">
+                            <label asp-for="Hostname" class="control-label"></label>
+                            <div class="autocomplete">
+                                <input id="autocompleteInput" autocomplete="off" asp-for="Hostname" class="txtHostname" type="text" />
+                            </div>
+                            <span asp-validation-for="Hostname" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <input type="submit" value="Search Password" class="myButton" />
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <span>You do not have the permission to view this page, contact your administrator to request access.</span>
+                }
+
+                @if (ViewData["Message"] != null)
+                {
+
+                    <span style="font-weight:bold; text-decoration:underline">Request information fetched:</span><br />
+                    <span style="font-weight:bold">Hostname:</span><span>&nbsp;@(ViewData["Hostname"])</span><br />
+                    <span style="font-weight:bold">Password:</span><span>&nbsp;@(ViewData["Message"])</span>
+                }
+            </td>
+            <td>
+                <img src="~/Images/Get-Modern-Key-Vault-Web-App_07.jpg" width="457" height="421" alt="">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4">
+                <img src="~/Images/Get-Modern-Key-Vault-Web-App_08.jpg" width="1229" height="63" alt="">
+            </td>
+        </tr>
+        <tr>
+            <td style="background-image:url(../Images/Get-Modern-Key-Vault-Web-App_09.jpg)" width="313" height="94">
+
+                @if ((bool)ViewData["hasaccess"])
+                {
+                    <div style="float:left; text-align:left; margin-left:10px; margin-bottom:2px; margin-top:15px" class="form-group">
+                        <span style="font-size:small; font-family:'Segoe UI'"><span style="font-weight:bold">Connected to Key Vault:</span>  @(ViewData["keyvault"])</span> <br />
+                        <span style="font-size:small; font-family:'Segoe UI'"><span style="font-weight:bold">Connected to Tenant:</span> @(ViewData["tenantname"])</span>
+                    </div>
+                }
+
+            </td>
+            <td style="background-image:url(../Images/Get-Modern-Key-Vault-Web-App_10.jpg)" width="916" height="99" colspan="3">
+                <div style="float:left; text-align:left; margin-left:10px; margin-bottom:2px; margin-top:39px">
+                    <span style="font-size:small; font-family:'Segoe UI'">This application is inteded to fetch local admin passwords from the Azure Key Vault. You can search for existing devices and get the local administrator password. All actions are monitored and the local administrator passwords are changed on a daily basis.</span>
+                    <br />
+                    <br />
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
