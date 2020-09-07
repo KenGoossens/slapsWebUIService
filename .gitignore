@@ -340,9 +340,5 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 *.sln
-*.csproj
-*.csproj
-*.sln
-*.csproj
 GetModernKeyVaultAADAuth.sln
 GetModernKeyVaultAADAuth.csproj

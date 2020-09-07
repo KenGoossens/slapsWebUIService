@@ -19,6 +19,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Configuration;
 
 namespace GetModernKeyVaultAADAuth.Controllers
 {
@@ -37,17 +38,20 @@ namespace GetModernKeyVaultAADAuth.Controllers
         private readonly WebOptions webOptions;
         private readonly TelemetryConfiguration config = TelemetryConfiguration.CreateDefault();
 
+        private readonly IConfiguration Configuration;
+
+
         private TelemetryClient Telemetry { get; set; }
 
-        public HomeController(ITokenAcquisition tokenAcquisition, IOptions<WebOptions> webOptionValue, ILogger<HomeController> logger)
+        public HomeController(ITokenAcquisition tokenAcquisition, IOptions<WebOptions> webOptionValue, ILogger<HomeController> logger, IConfiguration configuration)
         {
             this.tokenAcquisition = tokenAcquisition;
             this.webOptions = webOptionValue.Value;
             Secrets = new HashSet<SecretItem>();
-            // !!!!! specify your keyvault name
-            Keyvault = "";
-            // !!!!! add your azure ad group ID between the "" at the end
-            WebappClaim = new Claim("groups", "");
+            Configuration = configuration;
+
+            Keyvault = Configuration["keyvault"];
+            WebappClaim = new Claim("groups", Configuration["groupObject"]);
             // Not required
             UpnClaim = new Claim("name", "");
             Telemetry = new TelemetryClient(config);

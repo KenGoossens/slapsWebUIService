@@ -42,15 +42,16 @@ namespace GetModernKeyVaultAADAuth
             });
 
             services.AddOptions();
-            services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
-                          .AddSignIn("AzureAd", Configuration, options => Configuration.Bind("AzureAd", options));
+            //services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+            //        .AddSignIn("AzureAd", Configuration, options => Configuration.Bind("AzureAd", options));
 
 
 
             // Token acquisition service based on MSAL.NET
             // and chosen token cache implementation
-            services.AddWebAppCallsProtectedWebApi(Configuration, new string[] { Constants.ScopeUserRead })
-               .AddInMemoryTokenCaches();
+            services.AddMicrosoftIdentityWebAppAuthentication(Configuration,"AzureAd")
+            .EnableTokenAcquisitionToCallDownstreamApi(initialScopes: new string[] { "user.read" })
+            .AddInMemoryTokenCaches();
 
             services.AddGraphService(Configuration);
 
