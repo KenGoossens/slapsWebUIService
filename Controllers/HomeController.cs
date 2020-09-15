@@ -134,7 +134,7 @@ namespace GetModernKeyVaultAADAuth.Controllers
                 /* The next four lines of code show you how to use AppAuthentication library to fetch secrets from your key vault */
                 AzureServiceTokenProvider azureServiceTokenProvider = new AzureServiceTokenProvider();
                 KeyVaultClient keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
-                var secret = await keyVaultClient.GetSecretsAsync(String.Format("https://{0}.vault.azure.net", identifier)).ConfigureAwait(false);
+                var secret = await keyVaultClient.GetSecretsAsync(vaultBaseUrl: String.Format("https://{0}.vault.azure.net", identifier), maxresults: 1000).ConfigureAwait(false);
                 Secrets = secret.ToHashSet() ;
 
             }
